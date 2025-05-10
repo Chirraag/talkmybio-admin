@@ -1,10 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, limit, getDocs, startAfter, DocumentData, QueryDocumentSnapshot, collectionGroup, getDoc, doc as firebaseDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { format } from 'date-fns';
-import { Loader2, MessageSquare } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { ConversationDialog } from './ConversationDialog';
+import React, { useState, useEffect } from "react";
+import {
+  collection,
+  query,
+  limit,
+  getDocs,
+  startAfter,
+  DocumentData,
+  QueryDocumentSnapshot,
+  collectionGroup,
+  getDoc,
+  doc as firebaseDoc,
+} from "firebase/firestore";
+import { db } from "../lib/firebase";
+import { format } from "date-fns";
+import { Loader2, MessageSquare } from "lucide-react";
+import toast from "react-hot-toast";
+import { ConversationDialog } from "./ConversationDialog";
 
 interface CallEntry {
   id: string;
@@ -35,12 +46,13 @@ interface CallEntry {
   userEmail: string;
 }
 
-const CALLS_PER_PAGE = 20;
+const CALLS_PER_PAGE = 50;
 
 export const CallHistory: React.FC = () => {
   const [calls, setCalls] = useState<CallEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [lastVisible, setLastVisible] =
+    useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [selectedCall, setSelectedCall] = useState<CallEntry | null>(null);
@@ -55,35 +67,35 @@ export const CallHistory: React.FC = () => {
       }
 
       let callQuery = query(
-        collectionGroup(db, 'call_history'),
-        limit(CALLS_PER_PAGE)
+        collectionGroup(db, "call_history"),
+        limit(CALLS_PER_PAGE),
       );
 
       if (!isInitial && lastVisible) {
         callQuery = query(
-          collectionGroup(db, 'call_history'),
+          collectionGroup(db, "call_history"),
           startAfter(lastVisible),
-          limit(CALLS_PER_PAGE)
+          limit(CALLS_PER_PAGE),
         );
       }
 
       const snapshot = await getDocs(callQuery);
       const callsData = await Promise.all(
-        snapshot.docs.map(async docSnap => {
+        snapshot.docs.map(async (docSnap) => {
           const data = docSnap.data();
-          
+
           // Get user email from the parent document
           const userId = docSnap.ref.parent.parent?.id;
-          let userEmail = 'Unknown';
-          
+          let userEmail = "Unknown";
+
           if (userId) {
             try {
-              const userDoc = await getDoc(firebaseDoc(db, 'users', userId));
+              const userDoc = await getDoc(firebaseDoc(db, "users", userId));
               if (userDoc.exists()) {
-                userEmail = userDoc.data().email || 'Unknown';
+                userEmail = userDoc.data().email || "Unknown";
               }
             } catch (error) {
-              console.error('Error fetching user email:', error);
+              console.error("Error fetching user email:", error);
             }
           }
 
@@ -96,27 +108,27 @@ export const CallHistory: React.FC = () => {
             ...data,
             creationTime: data.creationTime.toDate(),
             lastUpdated: data.lastUpdated.toDate(),
-            userEmail
+            userEmail,
           } as CallEntry;
-        })
+        }),
       );
 
       // Sort the calls by lastUpdated on the client side
-      const sortedCallsData = callsData.sort((a, b) =>
-        b.lastUpdated.getTime() - a.lastUpdated.getTime()
+      const sortedCallsData = callsData.sort(
+        (a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime(),
       );
 
       if (isInitial) {
         setCalls(sortedCallsData);
       } else {
-        setCalls(prev => [...prev, ...sortedCallsData]);
+        setCalls((prev) => [...prev, ...sortedCallsData]);
       }
 
       setLastVisible(snapshot.docs[snapshot.docs.length - 1] || null);
       setHasMore(snapshot.docs.length === CALLS_PER_PAGE);
     } catch (error) {
-      console.error('Error fetching calls:', error);
-      toast.error('Failed to load call history');
+      console.error("Error fetching calls:", error);
+      toast.error("Failed to load call history");
     } finally {
       if (isInitial) {
         setIsLoading(false);
@@ -154,7 +166,9 @@ export const CallHistory: React.FC = () => {
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">All Call History</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              All Call History
+            </h1>
             <p className="text-gray-600 mt-1">
               View all user conversations across the platform
             </p>
@@ -168,8 +182,11 @@ export const CallHistory: React.FC = () => {
                   <p className="text-gray-500">No calls found</p>
                 </div>
               ) : (
-                calls.map(call => (
-                  <div key={call.id} className="p-6 hover:bg-gray-50 transition-colors">
+                calls.map((call) => (
+                  <div
+                    key={call.id}
+                    className="p-6 hover:bg-gray-50 transition-colors"
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
@@ -183,10 +200,12 @@ export const CallHistory: React.FC = () => {
                             Call ID: {call.callId}
                           </span>
                         </div>
-                        <p className="text-gray-600 mb-3">{call.initialQuestion}</p>
-                        
+                        <p className="text-gray-600 mb-3">
+                          {call.initialQuestion}
+                        </p>
+
                         <div className="text-sm text-gray-500">
-                          {format(call.creationTime, 'PPpp')}
+                          {format(call.creationTime, "PPpp")}
                         </div>
                       </div>
                       <div className="flex items-center gap-3 ml-4">
@@ -218,7 +237,7 @@ export const CallHistory: React.FC = () => {
                       Loading...
                     </>
                   ) : (
-                    'Load More'
+                    "Load More"
                   )}
                 </button>
               </div>
@@ -243,4 +262,3 @@ export const CallHistory: React.FC = () => {
     </>
   );
 };
-
